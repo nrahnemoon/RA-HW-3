@@ -60,7 +60,7 @@ class DiscreteEnvironment(object):
         #
         config = [0] * self.dimension
         for idx in range(self.dimension):
-            config[idx] = self.lower_limits[idx] + (self.resolution * coord[idx])
+            config[idx] = self.lower_limits[idx] + (self.resolution * coord[idx]) + (self.resolution/2)
         return config
 
     def GridCoordToNodeId(self,coord):
@@ -68,8 +68,9 @@ class DiscreteEnvironment(object):
         # TODO:
         # This function maps a grid coordinate to the associated
         # node id 
+
         node_id = 0
-        multiplier = 1;
+        multiplier = 1
         for idx in range(self.dimension):
             node_id = node_id + coord[idx] * multiplier
             multiplier = multiplier * self.num_cells[idx]
@@ -80,6 +81,7 @@ class DiscreteEnvironment(object):
         # TODO:
         # This function maps a node id to the associated
         # grid coordinate
+
         coord = [0] * self.dimension
         divisor = 1
         for idx in range(self.dimension):
@@ -91,9 +93,6 @@ class DiscreteEnvironment(object):
         for idx in range(self.dimension):
             index = -1 * (idx + 1)
             divisor = divisor / self.num_cells[index]
-            coord[index] = int(node_id / divisor)
-            node_id = node_id % divisor
+            coord[index] = numpy.floor(node_id / divisor)
+            node_id = node_id - (divisor * coord[index])
         return coord
-        
-        
-        
