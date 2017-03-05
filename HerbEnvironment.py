@@ -38,10 +38,15 @@ class HerbEnvironment(object):
 
         successors = []
 
-        # TODO: Here you will implement a function that looks
-        #  up the configuration associated with the particular node_id
-        #  and return a list of node_ids that represent the neighboring
-        #  nodes
+        coord = self.discrete_env.NodeIdToGridCoord(node_id)
+        for idx in range(self.discrete_env.dimension):
+            coord[idx] = coord[idx] + 1
+            successors.append(self.discrete_env.GridCoordToNodeId(coord))
+            coord[idx] = coord[idx] - 2
+            successors.append(self.discrete_env.GridCoordToNodeId(coord))
+            coord[idx] = coord[idx] + 1
+
+        successors = filter(lambda x: x >= 0, successors)
         
         return successors
 
@@ -52,7 +57,15 @@ class HerbEnvironment(object):
         # TODO: Here you will implement a function that 
         # computes the distance between the configurations given
         # by the two node ids
-       
+        start_config = self.discrete_env.NodeIdToConfiguration(start_id) 
+        start_coord = self.discrete_env.NodeIdToGridCoord(start_id)
+        end_coord = self.discrete_env.NodeIdToGridCoord(end_id)
+
+        sum = 0;
+        for idx in range(len(start_coord)):
+            sum += (end_coord[idx] - start_coord[idx])**2;
+
+        dist = numpy.sqrt(sum)
         return dist
 
     def ComputeHeuristicCost(self, start_id, goal_id):

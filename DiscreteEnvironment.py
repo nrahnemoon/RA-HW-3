@@ -60,7 +60,7 @@ class DiscreteEnvironment(object):
         #
         config = [0] * self.dimension
         for idx in range(self.dimension):
-            config[idx] = self.resolution * coord[idx]
+            config[idx] = self.lower_limits[idx] + (self.resolution * coord[idx])
         return config
 
     def GridCoordToNodeId(self,coord):
@@ -84,6 +84,10 @@ class DiscreteEnvironment(object):
         divisor = 1
         for idx in range(self.dimension):
             divisor = divisor * self.num_cells[idx]
+
+        if node_id >= divisor:
+            return -1 
+        
         for idx in range(self.dimension):
             index = -1 * (idx + 1)
             divisor = divisor / self.num_cells[index]
