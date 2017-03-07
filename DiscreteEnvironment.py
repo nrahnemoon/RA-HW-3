@@ -48,7 +48,7 @@ class DiscreteEnvironment(object):
         #
         coord = [0] * self.dimension
         for idx in range(self.dimension):
-            coord[idx] = int(numpy.floor(config[idx] / self.resolution))
+            coord[idx] = int(numpy.floor((config[idx]-self.lower_limits[idx]) / self.resolution))
 
         return coord
 

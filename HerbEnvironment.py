@@ -93,7 +93,6 @@ class HerbEnvironment(object):
 
     def IsInCollision(self, node_id):
         config = self.discrete_env.NodeIdToConfiguration(node_id)
-        print "config = " + str(config)
         orig_config = self.robot.GetActiveDOFValues()
         env = self.robot.GetEnv()
 
