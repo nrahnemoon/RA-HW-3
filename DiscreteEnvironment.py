@@ -26,7 +26,8 @@ class DiscreteEnvironment(object):
         # This function maps a node configuration in full configuration
         # space to a node in discrete space
         #
-        node_id = 0
+        coord = self.ConfigurationToGridCoord(config)
+        node_id = self.GridCoordToNodeId(coord)
         return node_id
 
     def NodeIdToConfiguration(self, nid):
@@ -35,7 +36,8 @@ class DiscreteEnvironment(object):
         # This function maps a node in discrete space to a configuraiton
         # in the full configuration space
         #
-        config = [0] * self.dimension
+        coord = self.NodeIdToGridCoord(nid)
+        config = self.GridCoordToConfiguration(coord)
         return config
         
     def ConfigurationToGridCoord(self, config):
@@ -45,6 +47,8 @@ class DiscreteEnvironment(object):
         # to a grid coordinate in discrete space
         #
         coord = [0] * self.dimension
+        for idx in range(self.dimension):
+            coord[idx] = int(numpy.floor((config[idx]-self.lower_limits[idx]) / self.resolution))
         return coord
 
     def GridCoordToConfiguration(self, coord):
@@ -54,6 +58,8 @@ class DiscreteEnvironment(object):
         # to a configuration in the full configuration space
         #
         config = [0] * self.dimension
+        for idx in range(self.dimension):
+            config[idx] = self.lower_limits[idx] + (self.resolution * coord[idx]) + (self.resolution/2)
         return config
 
     def GridCoordToNodeId(self,coord):
@@ -61,16 +67,31 @@ class DiscreteEnvironment(object):
         # TODO:
         # This function maps a grid coordinate to the associated
         # node id 
+
         node_id = 0
-        return node_id
+        multiplier = 1
+        for idx in range(self.dimension):
+            node_id = node_id + coord[idx] * multiplier
+            multiplier = multiplier * self.num_cells[idx]
+        return int(node_id)
 
     def NodeIdToGridCoord(self, node_id):
         
         # TODO:
         # This function maps a node id to the associated
         # grid coordinate
+
         coord = [0] * self.dimension
+        divisor = 1
+        for idx in range(self.dimension):
+            divisor = divisor * self.num_cells[idx]
+
+        if node_id >= divisor:
+            return -1 
+        
+        for idx in range(self.dimension):
+            index = -1 * (idx + 1)
+            divisor = divisor / self.num_cells[index]
+            coord[index] = numpy.floor(node_id / divisor)
+            node_id = node_id - (divisor * coord[index])
         return coord
-        
-        
-        
