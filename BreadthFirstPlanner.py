@@ -9,6 +9,7 @@ class BreadthFirstPlanner(object):
         self.visualize = visualize
         
     def Plan(self, start_config, goal_config):
+        self.planning_env.InitializePlot( goal_config)
         start_time = time.time()
         plan = []
 
@@ -45,7 +46,7 @@ class BreadthFirstPlanner(object):
                     node_tree_id = tree.AddVertex(self.planning_env.discrete_env.NodeIdToConfiguration(node_id))
                     nodeIdToTreeIdDict[node_id] = node_tree_id
                     tree.AddEdge(curr_tree_id, node_tree_id)
-                    # self.planning_env.PlotEdge(curr_tree_id, node_tree_id);
+                    self.planning_env.PlotEdge(self.planning_env.discrete_env.NodeIdToConfiguration(curr_id),self.planning_env.discrete_env.NodeIdToConfiguration(node_id) );
                     queue.put(node_id)
 
                     if node_id == goal_id:

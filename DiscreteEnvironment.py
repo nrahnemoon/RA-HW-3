@@ -86,8 +86,8 @@ class DiscreteEnvironment(object):
         for idx in range(self.dimension):
             divisor = divisor * self.num_cells[idx]
 
-        if node_id >= divisor:
-            return -1 
+        # if node_id >= divisor:
+        #     return -1 
         
         for idx in range(self.dimension):
             index = -1 * (idx + 1)

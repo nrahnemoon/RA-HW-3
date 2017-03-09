@@ -6,8 +6,8 @@ class SimpleEnvironment(object):
     
     def __init__(self, herb, resolution):
         self.robot = herb.robot
-        self.lower_limits = [-5., -5.]
-        self.upper_limits = [5., 5.]
+        self.lower_limits = [-0.5, -2.]
+        self.upper_limits = [3., 2.]
         self.discrete_env = DiscreteEnvironment(resolution, self.lower_limits, self.upper_limits)
 
         # add an obstacle
@@ -28,22 +28,39 @@ class SimpleEnvironment(object):
         #  up the configuration associated with the particular node_id
         #  and return a list of node_ids that represent the neighboring
         #  nodes
-        
+        node=self.discrete_env.NodeIdToGridCoord(node_id)
+        for i in range(0,numpy.size(node,0)):
+            node_add = list(node)
+            node_add[i] = node_add[i]+1
+            print "node_add"+str(node_add)
+            node_add_id = self.discrete_env.GridCoordToNodeId(node_add)
+            if (self.IsInLimits(node_add_id)==True and self.IsInCollision(node_add_id)!=True):
+                successors.append(node_add_id)
+        for j in range(0,numpy.size(node,0)):
+            node_minus = list(node)
+            node_minus[j] = node_minus[j]-1
+            node_minus_id = self.discrete_env.GridCoordToNodeId(node_minus)
+
+            print "node_minus"+str(node_minus)
+            if (self.IsInLimits(node_minus_id)==True and self.IsInCollision(node_minus_id)!=True):
+                successors.append(node_minus_id)
+        print successors
         return successors
 
     def ComputeDistance(self, start_id, end_id):
 
-        dist = 0
-
         # TODO: Here you will implement a function that 
         # computes the distance between the configurations given
         # by the two node ids
-
+        start_node=self.discrete_env.NodeIdToConfiguration(start_id)
+        end_node=self.discrete_env.NodeIdToConfiguration(end_id)
+        diff_vec = numpy.subtract(end_node,start_node)
+        dist = numpy.sqrt(numpy.dot(numpy.transpose(diff_vec),diff_vec))
         return dist
 
     def ComputeHeuristicCost(self, start_id, goal_id):
         
-        cost = 0
+        cost = self.ComputeDistance(start_id,goal_id)
 
         # TODO: Here you will implement a function that 
         # computes the heuristic cost between the configurations
@@ -83,4 +100,22 @@ class SimpleEnvironment(object):
                 'k.-', linewidth=2.5)
         pl.draw()
 
-        
+    def IsInCollision(self, node_id):
+        orig_config = self.robot.GetTransform()
+        location = self.discrete_env.NodeIdToConfiguration(node_id)
+        config =orig_config
+        config[:2,3]=location
+        env = self.robot.GetEnv()
+        with env:
+            self.robot.SetTransform(config)           
+        collision = env.CheckCollision(self.robot)
+        with env:
+            self.robot.SetTransform(orig_config)
+        return collision
+
+    def IsInLimits(self, node_id):
+        config = self.discrete_env.NodeIdToConfiguration(node_id)
+        for idx in range(len(config)):
+            if config[idx] < self.lower_limits[idx] or config[idx] > self.upper_limits[idx]:
+                return False
+        return True
