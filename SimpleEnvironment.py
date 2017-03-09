@@ -6,8 +6,8 @@ class SimpleEnvironment(object):
     
     def __init__(self, herb, resolution):
         self.robot = herb.robot
-        self.lower_limits = [-0.5, -2.]
-        self.upper_limits = [3., 2.]
+        self.lower_limits = [-5., -5.]
+        self.upper_limits = [5., 5.]
         self.discrete_env = DiscreteEnvironment(resolution, self.lower_limits, self.upper_limits)
 
         # add an obstacle
@@ -34,7 +34,7 @@ class SimpleEnvironment(object):
             node_add[i] = node_add[i]+1
             print "node_add"+str(node_add)
             node_add_id = self.discrete_env.GridCoordToNodeId(node_add)
-            if (self.IsInLimits(node_add_id)==True and self.IsInCollision(node_add_id)!=True):
+            if (node_add_id !=-1 and self.IsInLimits(node_add_id)==True and self.IsInCollision(node_add_id)!=True):
                 successors.append(node_add_id)
         for j in range(0,numpy.size(node,0)):
             node_minus = list(node)
@@ -42,7 +42,7 @@ class SimpleEnvironment(object):
             node_minus_id = self.discrete_env.GridCoordToNodeId(node_minus)
 
             print "node_minus"+str(node_minus)
-            if (self.IsInLimits(node_minus_id)==True and self.IsInCollision(node_minus_id)!=True):
+            if (node_add_id !=-1 and self.IsInLimits(node_minus_id)==True and self.IsInCollision(node_minus_id)!=True):
                 successors.append(node_minus_id)
         print successors
         return successors
@@ -115,7 +115,10 @@ class SimpleEnvironment(object):
 
     def IsInLimits(self, node_id):
         config = self.discrete_env.NodeIdToConfiguration(node_id)
+        if config == -1:
+            return False
         for idx in range(len(config)):
+            print config[idx]
             if config[idx] < self.lower_limits[idx] or config[idx] > self.upper_limits[idx]:
                 return False
         return True
