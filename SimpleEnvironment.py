@@ -1,5 +1,6 @@
 import numpy
 import pylab as pl
+from matplotlib import collections as ml
 import scipy
 import scipy.spatial
 from DiscreteEnvironment import DiscreteEnvironment
@@ -26,51 +27,23 @@ class SimpleEnvironment(object):
     def GetSuccessors(self, node_id):
 
         successors = []
-
         # TODO: Here you will implement a function that looks
         #  up the configuration associated with the particular node_id
         #  and return a list of node_ids that represent the neighboring
         #  nodes
-
-
-        node_grid = self.discrete_env.NodeIdToGridCoord(node_id)
-
-        for i in xrange(0,self.discrete_env.dimension):
-            if node_grid[i]+1<=self.discrete_env.num_cells[i]:
-                node_grid_temp = list(node_grid)
-                node_grid_temp[i]+=1;
-                temp_config = self.discrete_env.GridCoordToConfiguration(node_grid_temp)
-                
-
-                T = numpy.array([[1, 0, 0, temp_config[0]], 
-                            [0, 1, 0, temp_config[1]], 
-                            [0, 0, 1, 0], 
-                            [0, 0, 0, 1]])
-                with self.env1:
-                    self.robot.SetTransform(T)
-
-                testcollision = self.env1.CheckCollision(self.robot)
-                if self.env1.CheckCollision(self.robot)==False:
-                    node_ID_temp = self.discrete_env.GridCoordToNodeId(node_grid_temp)
-                    successors.append(node_ID_temp)
-
-
-            if node_grid[i]-1>=0:
-                node_grid_temp = list(node_grid)
-                node_grid_temp[i]-=1
-                temp_config = self.discrete_env.GridCoordToConfiguration(node_grid_temp)
-                T = numpy.array([[1, 0, 0, temp_config[0]], 
-                            [0, 1, 0, temp_config[1]], 
-                            [0, 0, 1, 0], 
-                            [0, 0, 0, 1]])
-                with self.env1:  
-                    self.robot.SetTransform(T)
-
-                testcollision = self.env1.CheckCollision(self.robot)
-                if self.env1.CheckCollision(self.robot)==False:
-                    node_ID_temp = self.discrete_env.GridCoordToNodeId(node_grid_temp)
-                    successors.append(node_ID_temp)
-        
+        node=self.discrete_env.NodeIdToGridCoord(node_id)
+        for i in range(0,numpy.size(node,0)):
+            node_add = list(node)
+            node_add[i] = node_add[i]+1
+            node_add_id = self.discrete_env.GridCoordToNodeId(node_add)
+            if (node_add_id !=-1 and self.IsInLimits(node_add_id)==True and self.IsInCollision(node_add_id)!=True):
+                successors.append(node_add_id)
+        for j in range(0,numpy.size(node,0)):
+            node_minus = list(node)
+            node_minus[j] = node_minus[j]-1
+            node_minus_id = self.discrete_env.GridCoordToNodeId(node_minus)
+            if (node_minus_id !=-1 and self.IsInLimits(node_minus_id)==True and self.IsInCollision(node_minus_id)!=True):
+                successors.append(node_minus_id)
         return successors
 
     def ComputeDistance(self, start_id, end_id):
@@ -134,4 +107,35 @@ class SimpleEnvironment(object):
                 'k.-', linewidth=2.5)
         pl.draw()
 
-        
+    def PlotAll(self,plan):
+        lines=[]
+        for i in range(0,numpy.size(plan,0)-1):
+            start = plan[i]
+            end = plan[i+1]
+            temp = [start,end]
+            pl.plot([start[0], end[0]],
+                    [start[1], end[1]],
+                    'k.-', linewidth=2.5)
+        pl.draw()
+
+    def IsInCollision(self, node_id):
+        orig_config = self.robot.GetTransform()
+        location = self.discrete_env.NodeIdToConfiguration(node_id)
+        config =orig_config
+        config[:2,3]=location
+        env = self.robot.GetEnv()
+        with env:
+            self.robot.SetTransform(config)           
+        collision = env.CheckCollision(self.robot)
+        with env:
+            self.robot.SetTransform(orig_config)
+        return collision
+
+    def IsInLimits(self, node_id):
+        config = self.discrete_env.NodeIdToConfiguration(node_id)
+        if config == -1:
+            return False
+        for idx in range(len(config)):
+            if config[idx] < self.lower_limits[idx] or config[idx] > self.upper_limits[idx]:
+                return False
+        return True 

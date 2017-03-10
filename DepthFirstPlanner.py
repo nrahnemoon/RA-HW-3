@@ -1,5 +1,6 @@
 from Queue import LifoQueue
 import numpy
+import time
 
 class DepthFirstPlanner(object):
     
@@ -9,7 +10,8 @@ class DepthFirstPlanner(object):
         self.nodes = dict()
 
     def Plan(self, start_config, goal_config):
-        self.planning_env.InitializePlot( goal_config)
+        
+        start_time = time.time()
         plan = []
         
         # TODO: Here you will implement the depth first planner
@@ -40,7 +42,7 @@ class DepthFirstPlanner(object):
                     # print nodes_stack
             node_id=nodes_stack.get()
             self.nodes[node_id]=curr_id
-            self.planning_env.PlotEdge(self.planning_env.discrete_env.NodeIdToConfiguration(curr_id),self.planning_env.discrete_env.NodeIdToConfiguration(node_id) );
+            
             curr_id=node_id
             seen.append(curr_id)
         plan_id=curr_id
@@ -50,5 +52,22 @@ class DepthFirstPlanner(object):
             plan_id=successor_id
             #raw_input('Press any key to begin planning')
         
-
+        plan_time = time.time()-start_time
+        number_of_nodes = numpy.size(plan,0)
+        plan_length = self.Plan_Length(plan)
+        print '---- DFS Stats ----'
+        print 'Plan Time: ' + str(plan_time)
+        print 'Plan Length: ' + str(plan_length)
+        print 'Num of Nodes: ' + str(number_of_nodes)
         return plan
+
+    def Plan_Length (self,plan): 
+        dist = 0
+        #self.planning_env.InitializePlot(plan[-1])
+        for i in range(0,numpy.size(plan,0)-1):
+            start_node = plan[i]
+            end_node = plan[i+1]
+            diff_vec = numpy.subtract(end_node,start_node)
+            dist = dist+numpy.sqrt(numpy.dot(numpy.transpose(diff_vec),diff_vec))
+        #self.planning_env.PlotAll(plan )
+        return dist
