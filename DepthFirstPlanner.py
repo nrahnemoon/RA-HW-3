@@ -18,6 +18,7 @@ class DepthFirstPlanner(object):
         #  and n is the dimension of the robots configuration space
 
         plan.append(start_config)
+        plan.append(goal_config)
         nodes_stack = LifoQueue()
         start_id=self.planning_env.discrete_env.ConfigurationToNodeId(start_config)
         nodes_stack.put(start_id)
@@ -38,12 +39,16 @@ class DepthFirstPlanner(object):
                     nodes_stack.put(successors[i]) 
                     # print nodes_stack
             node_id=nodes_stack.get()
+            self.nodes[node_id]=curr_id
             self.planning_env.PlotEdge(self.planning_env.discrete_env.NodeIdToConfiguration(curr_id),self.planning_env.discrete_env.NodeIdToConfiguration(node_id) );
             curr_id=node_id
             seen.append(curr_id)
-            plan.append(self.planning_env.discrete_env.NodeIdToConfiguration(curr_id))
+        plan_id=curr_id
+        while plan_id != start_id:
+            successor_id=self.nodes.get(plan_id) 
+            plan.insert(1,self.planning_env.discrete_env.NodeIdToConfiguration(successor_id))
+            plan_id=successor_id
             #raw_input('Press any key to begin planning')
-        plan.append(goal_config)
         
 
         return plan
