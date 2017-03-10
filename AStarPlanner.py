@@ -1,5 +1,6 @@
 import heapq
 import time
+import numpy
 class AStarPlanner(object):
     
     def __init__(self, planning_env, visualize):
@@ -97,5 +98,16 @@ class AStarPlanner(object):
         used_time = end_time - start_time
         print "Time Used"
         print used_time
-
+        print "Plan length: "+str(self.Plan_Length(plan))
         return plan
+
+    def Plan_Length (self,plan): 
+        dist = 0
+        #self.planning_env.InitializePlot(plan[-1])
+        for i in range(0,numpy.size(plan,0)-1):
+            start_node = plan[i]
+            end_node = plan[i+1]
+            diff_vec = numpy.subtract(end_node,start_node)
+            dist = dist+numpy.sqrt(numpy.dot(numpy.transpose(diff_vec),diff_vec))
+        #self.planning_env.PlotAll(plan )
+        return dist
