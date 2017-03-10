@@ -138,4 +138,53 @@ class SimpleEnvironment(object):
         for idx in range(len(config)):
             if config[idx] < self.lower_limits[idx] or config[idx] > self.upper_limits[idx]:
                 return False
-        return True 
+        return True
+
+    def SetGoalParameters(self, goal_config, p = 0.2):
+ 
+        self.goal_config = goal_config
+        self.p = p
+        
+    def GenerateRandomConfiguration(self):
+        config = [0] * 2;
+        #
+        # TODO: Generate and return a random configuration
+        #
+        config[0] = numpy.random.uniform(low=self.lower_limits[0], high=self.upper_limits[0]);
+        config[1] = numpy.random.uniform(low=self.lower_limits[1], high=self.upper_limits[1]);
+        
+        return numpy.array(config)
+
+    def Extend(self, start_config, end_config):
+        
+        #
+        # TODO: Implement a function which attempts to extend from 
+        #   a start configuration to a goal configuration
+        #
+
+        origTransform = self.robot.GetTransform()
+
+        steps = 10;
+        xSteps = numpy.linspace(start_config[0], end_config[0], (steps + 1));
+        ySteps = numpy.linspace(start_config[1], end_config[1], (steps + 1));
+
+        for i in range(steps + 1):
+
+            transform = self.robot.GetTransform()
+            transform[0, 3] = xSteps[i]
+            transform[1, 3] = ySteps[i]
+            self.robot.SetTransform(transform);
+            
+
+            for body in self.robot.GetEnv().GetBodies():
+                if (body.GetName() != self.robot.GetName() and
+                        self.robot.GetEnv().CheckCollision(body, self.robot)):
+                    #self.robot.SetTransform(origTransform);
+                    if (i == 0):
+                        return None;
+                    else:
+                        return [xSteps[i-1], ySteps[i-1]]
+
+        #self.robot.SetTransform(origTransform)
+
+        return end_config
