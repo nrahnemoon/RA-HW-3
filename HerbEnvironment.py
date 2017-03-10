@@ -1,4 +1,6 @@
 import numpy
+import scipy
+import scipy.spatial
 from DiscreteEnvironment import DiscreteEnvironment
 
 class HerbEnvironment(object):
@@ -8,7 +10,7 @@ class HerbEnvironment(object):
         self.robot = herb.robot
         self.lower_limits, self.upper_limits = self.robot.GetActiveDOFLimits()
         self.discrete_env = DiscreteEnvironment(resolution, self.lower_limits, self.upper_limits)
-
+        self.env1 = self.robot.GetEnv()
         # account for the fact that snapping to the middle of the grid cell may put us over our
         #  upper limit
         upper_coord = [x - 1 for x in self.discrete_env.num_cells]
@@ -36,75 +38,69 @@ class HerbEnvironment(object):
     
     def GetSuccessors(self, node_id):
 
-        successors = []
-
         # TODO: Here you will implement a function that looks
         #  up the configuration associated with the particular node_id
         #  and return a list of node_ids that represent the neighboring
         #  nodes
-        coord = self.discrete_env.NodeIdToGridCoord(node_id)
-        for idx in range(self.discrete_env.dimension):
-            coord[idx] = coord[idx] + 1
-            up_node_id = self.discrete_env.GridCoordToNodeId(coord)
-            if self.IsInLimits(up_node_id) and not self.IsInCollision(up_node_id):
-                successors.append(up_node_id)
-            coord[idx] = coord[idx] - 2
-            down_node_id = self.discrete_env.GridCoordToNodeId(coord)
-            if self.IsInLimits(down_node_id) and not self.IsInCollision(down_node_id):
-                successors.append(down_node_id)
-            coord[idx] = coord[idx] + 1
+
+        successors = []
+        node_grid = self.discrete_env.NodeIdToGridCoord(node_id)
+        for i in xrange(0,self.discrete_env.dimension):
+            if node_grid[i]+1<=self.discrete_env.num_cells[i]:
+                node_grid_temp = list(node_grid)
+                node_grid_temp[i]+=1;
+                temp_config = self.discrete_env.GridCoordToConfiguration(node_grid_temp)
+                with self.env1:  
+                    self.robot.SetDOFValues(temp_config, self.robot.GetActiveDOFIndices())
+                testcollision = self.env1.CheckCollision(self.robot)
+                if self.env1.CheckCollision(self.robot)==False:
+                    node_ID_temp = self.discrete_env.GridCoordToNodeId(node_grid_temp)
+                    successors.append(node_ID_temp)
+
+
+            if node_grid[i]-1>=0:
+                node_grid_temp = list(node_grid)
+                node_grid_temp[i]-=1
+                temp_config = self.discrete_env.GridCoordToConfiguration(node_grid_temp)
+                with self.env1:  
+                    self.robot.SetDOFValues(temp_config, self.robot.GetActiveDOFIndices())
+                if self.env1.CheckCollision(self.robot)==False:
+                    node_ID_temp = self.discrete_env.GridCoordToNodeId(node_grid_temp)
+                    successors.append(node_ID_temp)
+
         return successors
 
+
     def ComputeDistance(self, start_id, end_id):
-
-        dist = 0
-
         # TODO: Here you will implement a function that 
         # computes the distance between the configurations given
         # by the two node ids
-        start_config = self.discrete_env.NodeIdToConfiguration(start_id) 
-        end_config = self.discrete_env.NodeIdToConfiguration(end_id)
 
-        sum = 0;
-        for idx in range(len(start_coord)):
-            sum += (end_config[idx] - start_config[idx])**2;
+        dist = 0
+        #start_config = self.discrete_env.NodeIdToConfiguration(start_id)
+        #end_config = self.discrete_env.NodeIdToConfiguration(end_id)
+        start_grid = self.discrete_env.NodeIdToGridCoord(start_id)
+        end_grid = self.discrete_env.NodeIdToGridCoord(end_id)
 
-        dist = numpy.sqrt(sum)
+
+        #dist = numpy.linalg.norm(start_config-end_config)
+        dist = scipy.spatial.distance.cityblock(start_grid,end_grid)
         return dist
 
     def ComputeHeuristicCost(self, start_id, goal_id):
-        
-        cost = 0
-
         # TODO: Here you will implement a function that 
         # computes the heuristic cost between the configurations
         # given by the two node ids
+        
+        cost = 0
+        # start_config = self.discrete_env.NodeIdToConfiguration(start_id)
+        # end_config = self.discrete_env.NodeIdToConfiguration(end_id)
+        # cost = numpy.linalg.norm(start_config-end_config)
+        start_grid = self.discrete_env.NodeIdToGridCoord(start_id)
+        goal_grid = self.discrete_env.NodeIdToGridCoord(goal_id)
+        cost = scipy.spatial.distance.cityblock(start_grid,goal_grid)
 
-        start_config = self.discrete_env.NodeIdToConfiguration(start_id)
-        goal_config = self.discrete_env.NodeIdToConfiguration(goal_id)
-        for i in range(len(start_config)):
-            cost = cost + abs(start_config[i] - goal_config[i])
 
+        
         return cost
 
-    def IsInLimits(self, node_id):
-        config = self.discrete_env.NodeIdToConfiguration(node_id)
-        for idx in range(len(config)):
-            if config[idx] < self.lower_limits[idx] or config[idx] > self.upper_limits[idx]:
-                return False
-        return True
-
-    def IsInCollision(self, node_id):
-        config = self.discrete_env.NodeIdToConfiguration(node_id)
-        orig_config = self.robot.GetActiveDOFValues()
-        env = self.robot.GetEnv()
-
-        with env:
-            self.robot.SetDOFValues(config, self.robot.GetActiveDOFIndices())
-
-        collision = env.CheckCollision(self.robot)
-
-        with env:
-            self.robot.SetDOFValues(orig_config, self.robot.GetActiveDOFIndices())
-
-        return collision
